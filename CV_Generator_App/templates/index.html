@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>مولد النماذج</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="flex h-screen">
+        <!-- قسم التعبئة -->
+        <div class="w-1/2 p-8 overflow-y-auto bg-white">
+            <h1 class="text-2xl font-bold mb-6">تخصيص النموذج</h1>
+
+            <label class="block mb-4">
+                <span>العنوان</span>
+                <input id="title" class="w-full p-2 border rounded mt-1" value="نموذج تجريبي">
+            </label>
+
+            <label class="block mb-4">
+                <span>المحتوى</span>
+                <textarea id="content" class="w-full p-2 border rounded mt-1 h-32">هذا نص المعاينة المباشرة</textarea>
+            </label>
+
+            <label class="block mb-4">
+                <span>نوع الخط</span>
+                <select id="font_family" class="w-full p-2 border rounded mt-1">
+                    {% for font in fonts %}
+                    <option value="{{font}}">{{font}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="block mb-4">
+                <span>حجم الخط</span>
+                <select id="font_size" class="w-full p-2 border rounded mt-1">
+                    {% for size in sizes %}
+                    <option value="{{size}}">{{size}}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="block mb-4">
+                <span>لون الخط</span>
+                <input type="color" id="font_color" class="w-full p-1 h-10 border rounded mt-1" value="#000000">
+            </label>
+
+            <div class="flex gap-4 mt-8">
+                <button onclick="downloadWord()" class="bg-blue-600 text-white px-6 py-3 rounded-lg">
+                    تحميل Word
+                </button>
+                <button onclick="downloadPDF()" class="bg-red-600 text-white px-6 py-3 rounded-lg">
+                    تحميل PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- قسم الـ Preview -->
+        <div class="w-1/2 p-8 bg-gray-100">
+            <h2 class="text-xl font-bold mb-4">معاينة مباشرة</h2>
+            <div id="preview" class="bg-white p-8 shadow-lg min-h-[500px]">
+                <h1 id="preview-title" style="font-weight: bold; margin-bottom: 20px;"></h1>
+                <p id="preview-content"></p>
+            </div>
+        </div>
+    </div>
+
+<script>
+// دالة تحديث المعاينة لحظياً
+function updatePreview() {
+    const data = getFormData();
+    const previewDiv = document.getElementById('preview');
+    previewDiv.style.fontFamily = data.font_family;
+    previewDiv.style.fontSize = data.font_size + 'px';
+    previewDiv.style.color = data.font_color;
+
+    document.getElementById('preview-title').innerText = data.title;
+    document.getElementById('preview-content').innerText = data.content;
+}
+
+function getFormData() {
+    return {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        font_family: document.getElementById('font_family').value,
+        font_size: parseInt(document.getElementById('font_size').value),
+        font_color: document.getElementById('font_color').value
+    }
+}
+
+// نحدث المعاينة مع أي تغيير
+document.querySelectorAll('input, select, textarea').forEach(el => {
+    el.addEventListener('input', updatePreview);
+});
+
+async function downloadWord() {
+    const res = await fetch('/generate_word', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(getFormData())
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'document.docx';
+    a.click();
+}
+
+async function downloadPDF() {
+    const res = await fetch('/generate_pdf', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(getFormData())
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'document.pdf';
+    a.click();
+}
+
+// تحديث أول ما تفتح الصفحة
+updatePreview();
+</script>
+</body>
+</html>
